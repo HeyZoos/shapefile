@@ -1,4 +1,4 @@
-defmodule Shapefile.Record do
+defmodule Shp.Record do
 
     def record_number(bytes) do
         << num :: unit(8)-size(4)-big >> = bytes

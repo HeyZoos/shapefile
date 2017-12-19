@@ -1,4 +1,4 @@
-defmodule Shapefile do
+defmodule Shp do
   @moduledoc """
   Documentation for Shapefile.
   """
