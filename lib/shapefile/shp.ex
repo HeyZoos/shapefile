@@ -1,6 +1,5 @@
-defmodule Shp do
+defmodule Shapefile.Shp do
   @moduledoc """
-  Documentation for Shapefile.
   """
   
   @shape_types %{
