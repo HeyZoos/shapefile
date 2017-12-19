@@ -46,7 +46,6 @@ defmodule Shapefile.Shx do
   def parse_records(<<>>), do: []
   def parse_records(bytes) do
     << record :: unit(8)-size(8)-binary, tail :: binary >> = bytes
-
     [ parse_record(record) | parse_records(tail) ]
   end
 
