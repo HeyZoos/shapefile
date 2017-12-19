@@ -2,6 +2,23 @@ defmodule Shapefile do
   @moduledoc """
   Documentation for Shapefile.
   """
+  
+  @shape_types %{
+    0 => :null_shape,
+    1 => :point,
+    3 => :polyline,
+    5 => :polygon,
+    8 => :multipoint,
+    11 => :pointz,
+    13 => :polylinez,
+    15 => :polygonz,
+    18 => :multipointz,
+    21 => :pointm,
+    23 => :polylinem,
+    25 => :polygonm,
+    28 => :multipointm,
+    31 => :multipatch
+  }
 
   @doc """
   Extracts the file code from the given binary. The file code is represented
@@ -218,5 +235,9 @@ defmodule Shapefile do
       mmin: mmin(header),
       mmax: mmax(header) 
     }
+  end
+
+  def header(file) do
+
   end
 end
