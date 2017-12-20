@@ -25,8 +25,9 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.file_code(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> << code :: size(4)-binary, _ :: binary >> = shp
+      iex> Shapefile.Shp.file_code(code)
       9994
 
   """
@@ -41,8 +42,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.file_length(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.file_length(shp)
       12606
 
   """
@@ -57,8 +58,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.version(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.version(shp)
       1000
 
   """
@@ -73,9 +74,9 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.shape_type(file)
-      1000
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.shape_type(shp)
+      5
 
   """
   def shape_type(header) do
@@ -89,8 +90,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.xmin(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.xmin(shp)
       13861713156339110383
 
   """
@@ -105,8 +106,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.ymin(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.ymin(shp)
       4631601456002246487
 
   """
@@ -121,8 +122,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.xmax(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.xmax(shp)
       13861690657312651908
 
   """
@@ -137,8 +138,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.ymax(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.ymax(shp)
       4631621889855161241
 
   """
@@ -153,8 +154,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.zmin(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.zmin(shp)
       0
 
   """
@@ -169,8 +170,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.zmax(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.zmax(shp)
       0
 
   """
@@ -185,8 +186,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.mmin(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.mmin(shp)
       0
 
   """
@@ -201,8 +202,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.mmax(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.mmax(shp)
       0
 
   """
@@ -217,8 +218,8 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> Shapefile.bbox(file)
+      iex> shp = File.read!("test/fixtures/aircraft.shp") 
+      iex> Shapefile.Shp.bbox(shp)
       %{mmax: 0, mmin: 0, xmax: 13861690657312651908, xmin: 13861713156339110383,
         ymax: 4631621889855161241, ymin: 4631601456002246487, zmax: 0, zmin: 0}
 
@@ -242,9 +243,9 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> << head :: unit(8)-size(100)-binary, content :: binary >> = file
-      iex> Shapefile.header(head)
+      iex> file = File.read!("test/fixtures/aircraft.shp") 
+      iex> << head :: unit(8)-size(100)-binary, _ :: binary >> = file
+      iex> Shapefile.Shp.header(head)
       %{bbox: %{mmax: 0, mmin: 0, xmax: 13861690657312651908,
         xmin: 13861713156339110383, ymax: 4631621889855161241,
         ymin: 4631601456002246487, zmax: 0, zmin: 0}, file_code: 9994,
@@ -267,6 +268,12 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
+      iex> file = File.read!("test/fixtures/aircraft.shp") 
+      iex> << _ :: unit(8)-size(100)-binary, content :: binary >> = file
+      iex> << number :: size(4)-binary, _ :: binary >> = content
+      iex> Shapefile.Shp.record_number(number)
+      1
+
   """
   def record_number(<< num :: unit(8)-size(4)-big >>), do: num
 
@@ -276,6 +283,12 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
+    iex> file = File.read!("test/fixtures/aircraft.shp") 
+    iex> << _ :: unit(8)-size(100)-binary, content :: binary >> = file
+    iex> << _ :: size(4)-binary, len :: size(4)-binary, _ :: binary >> = content
+    iex> Shapefile.Shp.record_length(len)
+    12552
+
   """
   def record_length(<< len :: unit(8)-size(4)-big >>), do: len
 
@@ -284,6 +297,12 @@ defmodule Shapefile.Shp do
   by 4 little endian bytes. The number returned is one of the `@shape_types`.
 
   ## Examples
+
+    iex> file = File.read!("test/fixtures/aircraft.shp") 
+    iex> << _ :: unit(8)-size(100)-binary, content :: binary >> = file
+    iex> << _ :: size(8)-binary, type :: size(4)-binary, _ :: binary >> = content
+    iex> Shapefile.Shp.record_type(type)
+    5
 
   """
   def record_type(<< type :: unit(8)-size(4)-little >>), do: type
@@ -295,14 +314,14 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-      iex> file = File.read!("shapefile.shp") 
-      iex> << head :: unit(8)-size(100)-binary, body :: binary >> = file
-      iex> << record_head :: unit(8)-size(8), _ :: binary >> = body
-      iex> Shapefile.record_header(record_head)
-      %{
-        number: 1,
-        length: 12552
-      }
+    iex> file = File.read!("test/fixtures/aircraft.shp") 
+    iex> << _ :: unit(8)-size(100)-binary, body :: binary >> = file
+    iex> << record_head :: size(8)-binary, _ :: binary >> = body
+    iex> Shapefile.Shp.record_header(record_head)
+    %{
+      number: 1,
+      length: 12552
+    }
 
   """
   def record_header(<< header :: size(8)-binary >>) do
@@ -314,6 +333,22 @@ defmodule Shapefile.Shp do
     }
   end
 
+  @doc """
+  Extracts the record type and shape from a given binary. 
+
+  ## Examples
+
+    iex> file = File.read!("test/fixtures/aircraft.shp") 
+    iex> << _ :: unit(8)-size(100)-binary, body :: binary >> = file
+    iex> << _ :: size(8)-binary, body :: binary >> = body
+    iex> Shapefile.Shp.parse_record(1, body)
+    %{
+      number: 1,
+      record: 12550.0,
+      type: 5
+    }
+
+  """
   def parse_record(number, record) do
     << type :: size(4)-binary, contents :: binary >> = record
 
@@ -324,6 +359,24 @@ defmodule Shapefile.Shp do
     }
   end
 
+  @doc """
+  Given a the file content of a .shp file, extract the record into a
+  list of maps.
+
+  ## Examples
+
+    # iex> shp = File.read!("test/fixtures/watersheds.shp")
+    # iex> << _ :: size(100)-binary, body >> = shp
+    # iex> Shapefile.Shp.parse(body)
+    [%{number: 1, record: 7222.0, type: 5},
+      %{number: 2, record: 3230.0, type: 5}, 
+      %{number: 3, record: 6392.0, type: 5},
+      %{number: 4, record: 3006.0, type: 5},
+      %{number: 5, record: 10878.0, type: 5},
+      %{number: 6, record: 2080.0, type: 5},
+      %{number: 7, record: 19144.0, type: 5}]
+
+  """
   def parse_records(<<>>), do: []
   def parse_records(bytes) do
       << head :: size(8)-binary, bytes :: binary >> = bytes
@@ -332,6 +385,25 @@ defmodule Shapefile.Shp do
       [ parse_record(number, record) | parse_records(tail) ]
   end
 
+  @doc """
+  Parse a .shp binary.
+
+  ## Examples
+
+    # iex> shp = File.read!("test/fixtures/watersheds.shp")
+    # iex> Shapefile.Shp.parse(shp)
+    %{header: %{bbox: %{mmax: 0, mmin: 0, xmax: 13861677400097999498,
+          xmin: 13861718121316116984, ymax: 4631621822330553015,
+          ymin: 4631585345496515183, zmax: 0, zmin: 0}, file_code: 9994,
+        file_length: 52044, shape_type: 5, version: 1000},
+      records: [%{number: 1, record: 7222.0, type: 5},
+      %{number: 2, record: 3230.0, type: 5}, %{number: 3, record: 6392.0, type: 5},
+      %{number: 4, record: 3006.0, type: 5},
+      %{number: 5, record: 10878.0, type: 5},
+      %{number: 6, record: 2080.0, type: 5},
+      %{number: 7, record: 19144.0, type: 5}]}
+
+  """
   def parse(bytes) do
     << head :: unit(8)-size(100)-binary, body :: binary >> = bytes
 

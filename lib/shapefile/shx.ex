@@ -9,7 +9,7 @@ defmodule Shapefile.Shx do
 
   ## Examples
 
-    iex> file = File.read!("shapefile.shx") 
+    iex> file = File.read!("test/fixtures/aircraft.shx") 
     iex> << _ :: unit(8)-size(100)-binary, body :: binary >> = file
     iex> Shapefile.Shx.offset(body)
     50
@@ -45,7 +45,7 @@ defmodule Shapefile.Shx do
 
   ## Examples
 
-    iex> shx = File.read!("shapefile.shx")
+    iex> shx = File.read!("test/fixtures/aircraft.shx")
     iex> << _ :: unit(8)-size(100), body :: binary >> = shx
     iex> Shapefile.Shx.parse_records(body)
     [%{content_length: 12552, offset: 50}]
@@ -64,7 +64,7 @@ defmodule Shapefile.Shx do
 
   ## Examples
 
-    iex> shx = File.read!("shapefile.shx") 
+    iex> shx = File.read!("test/fixtures/aircraft.shx") 
     iex> Shapefile.Shx.parse(shx)
     %{header: %{bbox: %{mmax: 0, mmin: 0, xmax: 13861690657312651908,
           xmin: 13861713156339110383, ymax: 4631621889855161241,
