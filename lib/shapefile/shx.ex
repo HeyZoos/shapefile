@@ -42,6 +42,14 @@ defmodule Shapefile.Shx do
 
   @doc """
   Parse records from a byte stream containing multiple records.
+
+  ## Examples
+
+    iex> shx = File.read!("shapefile.shx")
+    iex> << _ :: unit(8)-size(100), body :: binary >> = shx
+    iex> Shapefile.Shx.parse_records(body)
+    [%{content_length: 12552, offset: 50}]
+
   """
   def parse_records(<<>>), do: []
   def parse_records(bytes) do

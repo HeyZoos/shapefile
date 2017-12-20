@@ -4,11 +4,6 @@ defmodule Shapefile do
   """
 
   def parse(bytes) do
-    << head :: unit(8)-size(100)-binary, body :: binary >> = bytes
-
-    %{
-        header: Shapefile.Shp.header(head),
-        records: Shapefile.Shp.Record.parse(body)
-    }
+    Shapefile.Shp.parse(bytes)
   end
 end

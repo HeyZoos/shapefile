@@ -260,4 +260,85 @@ defmodule Shapefile.Shp do
       bbox: bbox(bytes)
     }
   end
+
+  @doc """
+  Extracts the record number value from a given binary. The header is represented
+  by 4 big endian bytes.
+
+  ## Examples
+
+  """
+  def record_number(<< num :: unit(8)-size(4)-big >>), do: num
+
+  @doc """
+  Extracts the record length value from a given binary. The length is represented
+  by 4 big endian bytes. The number returned is the record's size in 16-bit words.
+
+  ## Examples
+
+  """
+  def record_length(<< len :: unit(8)-size(4)-big >>), do: len
+
+  @doc """
+  Extracts the record type value from a given binary. The type is represented
+  by 4 little endian bytes. The number returned is one of the `@shape_types`.
+
+  ## Examples
+
+  """
+  def record_type(<< type :: unit(8)-size(4)-little >>), do: type
+
+  @doc """
+  Extracts the record header from a given binary. The header is represented
+  by 8 big endian bytes. The header contains information about the record's number
+  and length.
+
+  ## Examples
+
+      iex> file = File.read!("shapefile.shp") 
+      iex> << head :: unit(8)-size(100)-binary, body :: binary >> = file
+      iex> << record_head :: unit(8)-size(8), _ :: binary >> = body
+      iex> Shapefile.record_header(record_head)
+      %{
+        number: 1,
+        length: 12552
+      }
+
+  """
+  def record_header(<< header :: size(8)-binary >>) do
+    << number :: size(4)-binary, len :: size(4)-binary >> = header
+
+    %{
+        number: record_number(number),
+        length: record_length(len)
+    }
+  end
+
+  def parse_record(number, record) do
+    << type :: size(4)-binary, contents :: binary >> = record
+
+    %{
+      number: number,
+      type: record_type(type),
+      record: byte_size(record)
+    }
+  end
+
+  def parse_records(<<>>), do: []
+  def parse_records(bytes) do
+      << head :: size(8)-binary, body :: binary >> = bytes
+      IO.inspect %{number: number, length: len} = record_header(head)
+      record_len_minus_header = len - 4
+      << record :: unit(16)-size(record_len_minus_header)-binary, body :: binary >> = body
+      [ parse_record(number, record) | parse_records(body) ]
+  end
+
+  def parse(bytes) do
+    << head :: unit(8)-size(100)-binary, body :: binary >> = bytes
+
+    %{
+      header: header(head),
+      records: parse_records(body)
+    }
+  end
 end
