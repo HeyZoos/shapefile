@@ -320,17 +320,16 @@ defmodule Shapefile.Shp do
     %{
       number: number,
       type: record_type(type),
-      record: byte_size(record)
+      record: bit_size(contents) / 16
     }
   end
 
   def parse_records(<<>>), do: []
   def parse_records(bytes) do
-      << head :: size(8)-binary, body :: binary >> = bytes
-      IO.inspect %{number: number, length: len} = record_header(head)
-      record_len_minus_header = len - 4
-      << record :: unit(16)-size(record_len_minus_header)-binary, body :: binary >> = body
-      [ parse_record(number, record) | parse_records(body) ]
+      << head :: size(8)-binary, bytes :: binary >> = bytes
+      %{number: number, length: len} = record_header(head)
+      << record :: unit(16)-size(len)-binary, tail :: binary >> = bytes
+      [ parse_record(number, record) | parse_records(tail) ]
   end
 
   def parse(bytes) do
