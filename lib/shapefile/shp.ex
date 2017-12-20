@@ -238,6 +238,28 @@ defmodule Shapefile.Shp do
   end
 
   @doc """
+  Extracts the bounding box from the given binary for a record. 
+
+  ## Examples
+
+  """
+  def record_bbox(<< bytes :: size(32)-binary >>) do
+    <<
+      xmin :: unit(8)-size(8)-little-float,
+      ymin :: unit(8)-size(8)-little-float,
+      xmax :: unit(8)-size(8)-little-float,
+      ymax :: unit(8)-size(8)-little-float
+    >> = bytes
+
+    %{
+      xmin: xmin,
+      ymin: ymin,
+      xmax: xmax,
+      ymax: ymax
+    }
+  end
+
+  @doc """
   Extracts the header values from the given binary. The header is represented
   by the first 100 bytes of a shapefile.
 
@@ -357,6 +379,48 @@ defmodule Shapefile.Shp do
       type: record_type(type),
       record: bit_size(contents) / 16
     }
+  end
+
+  @doc """
+  A point consists of a pair of double-precision coordinates in the order X,Y.
+  """
+  def parse_shape(:point, << bytes :: size(16)-binary >>) do
+    << 
+      x :: unit(8)-size(8)-little-float,
+      y :: unit(8)-size(8)-little-float
+    >> = bytes
+
+    %{
+      x: x,
+      y: y
+    }    
+  end
+
+  def parse_points(points) do
+    << point :: size(16)-binary, points :: binary >> = points
+    [ parse_shape(:point, point) | parse_points(points) ]
+  end
+
+  @doc """
+  """
+  def parse_shape(:multipoint, bytes) do
+    << 
+      box :: size(32)-binary, 
+      num_points :: size(8)-unit(4)-little,
+      points :: binary
+    >> = bytes
+
+    %{
+      box: record_bbox(box),
+      num_points: num_points,
+      points: parse_points(points)
+    }
+  end
+
+  @doc """
+  """
+  def parse_shape(:polygon, bytes) do
+
   end
 
   @doc """
