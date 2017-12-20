@@ -8,7 +8,8 @@ defmodule Shapefile.Mixfile do
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
       deps: deps(),
-      test_coverage: [tool: ExCoveralls]
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [coveralls: :test]
     ]
   end
 
@@ -22,7 +23,7 @@ defmodule Shapefile.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:excoveralls, "~> 0.7.5", only: [:dev, :test]}
+      {:excoveralls, "~> 0.7.5", only: :test}
     ]
   end
 end

@@ -1,5 +1,8 @@
 # Shapefile
 
+[![Build Status](https://travis-ci.org/HeyZoos/shapefile.svg?branch=master)](https://travis-ci.org/HeyZoos/shapefile?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/HeyZoos/shapefile/badge.svg?branch=master)](https://coveralls.io/github/HeyZoos/shapefile?branch=master)
+
 **TODO: Add description**
 
 ## Installation
