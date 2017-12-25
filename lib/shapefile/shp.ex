@@ -1,7 +1,7 @@
 defmodule Shapefile.Shp do
   @moduledoc """
   """
-  
+
   @shape_types %{
     0 => :null_shape,
     1 => :point,
@@ -32,7 +32,7 @@ defmodule Shapefile.Shp do
 
   """
   def file_code(header) do
-    << code :: unit(8)-size(4)-big, _ :: binary >> = header
+    <<code::unit(8)-size(4)-big, _::binary>> = header
     code
   end
 
@@ -48,7 +48,7 @@ defmodule Shapefile.Shp do
 
   """
   def file_length(header) do
-    << _ :: unit(8)-size(24), length :: unit(8)-size(4)-big, _ :: binary >> = header
+    <<_::unit(8)-size(24), length::unit(8)-size(4)-big, _::binary>> = header
     length
   end
 
@@ -64,7 +64,7 @@ defmodule Shapefile.Shp do
 
   """
   def version(header) do
-    << _ :: unit(8)-size(28), ver :: unit(8)-size(4)-little, _ :: binary >> = header
+    <<_::unit(8)-size(28), ver::unit(8)-size(4)-little, _::binary>> = header
     ver
   end
 
@@ -80,7 +80,7 @@ defmodule Shapefile.Shp do
 
   """
   def shape_type(header) do
-    << _ :: unit(8)-size(32), type :: unit(8)-size(4)-little, _ :: binary >> = header
+    <<_::unit(8)-size(32), type::unit(8)-size(4)-little, _::binary>> = header
     type
   end
 
@@ -96,7 +96,7 @@ defmodule Shapefile.Shp do
 
   """
   def xmin(header) do
-    << _ :: unit(8)-size(36), min :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(36), min::unit(8)-size(8)-little, _::binary>> = header
     min
   end
 
@@ -112,7 +112,7 @@ defmodule Shapefile.Shp do
 
   """
   def ymin(header) do
-    << _ :: unit(8)-size(44), min :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(44), min::unit(8)-size(8)-little, _::binary>> = header
     min
   end
 
@@ -128,7 +128,7 @@ defmodule Shapefile.Shp do
 
   """
   def xmax(header) do
-    << _ :: unit(8)-size(52), max :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(52), max::unit(8)-size(8)-little, _::binary>> = header
     max
   end
 
@@ -144,7 +144,7 @@ defmodule Shapefile.Shp do
 
   """
   def ymax(header) do
-    << _ :: unit(8)-size(60), max :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(60), max::unit(8)-size(8)-little, _::binary>> = header
     max
   end
 
@@ -160,7 +160,7 @@ defmodule Shapefile.Shp do
 
   """
   def zmin(header) do
-    << _ :: unit(8)-size(68), min :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(68), min::unit(8)-size(8)-little, _::binary>> = header
     min
   end
 
@@ -176,7 +176,7 @@ defmodule Shapefile.Shp do
 
   """
   def zmax(header) do
-    << _ :: unit(8)-size(76), max :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(76), max::unit(8)-size(8)-little, _::binary>> = header
     max
   end
 
@@ -192,7 +192,7 @@ defmodule Shapefile.Shp do
 
   """
   def mmin(header) do
-    << _ :: unit(8)-size(84), min :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(84), min::unit(8)-size(8)-little, _::binary>> = header
     min
   end
 
@@ -208,7 +208,7 @@ defmodule Shapefile.Shp do
 
   """
   def mmax(header) do
-    << _ :: unit(8)-size(92), max :: unit(8)-size(8)-little, _ :: binary >> = header
+    <<_::unit(8)-size(92), max::unit(8)-size(8)-little, _::binary>> = header
     max
   end
 
@@ -233,7 +233,7 @@ defmodule Shapefile.Shp do
       zmin: zmin(header),
       zmax: zmax(header),
       mmin: mmin(header),
-      mmax: mmax(header) 
+      mmax: mmax(header)
     }
   end
 
@@ -243,12 +243,12 @@ defmodule Shapefile.Shp do
   ## Examples
 
   """
-  def record_bbox(<< bytes :: size(32)-binary >>) do
+  def record_bbox(<<bytes::size(32)-binary>>) do
     <<
-      xmin :: unit(8)-size(8)-little-float,
-      ymin :: unit(8)-size(8)-little-float,
-      xmax :: unit(8)-size(8)-little-float,
-      ymax :: unit(8)-size(8)-little-float
+      xmin::unit(8)-size(8)-little-float,
+      ymin::unit(8)-size(8)-little-float,
+      xmax::unit(8)-size(8)-little-float,
+      ymax::unit(8)-size(8)-little-float
     >> = bytes
 
     %{
@@ -297,7 +297,7 @@ defmodule Shapefile.Shp do
       1
 
   """
-  def record_number(<< num :: unit(8)-size(4)-big >>), do: num
+  def record_number(<<num::unit(8)-size(4)-big>>), do: num
 
   @doc """
   Extracts the record length value from a given binary. The length is represented
@@ -312,7 +312,7 @@ defmodule Shapefile.Shp do
     12552
 
   """
-  def record_length(<< len :: unit(8)-size(4)-big >>), do: len
+  def record_length(<<len::unit(8)-size(4)-big>>), do: len
 
   @doc """
   Extracts the record type value from a given binary. The type is represented
@@ -327,7 +327,7 @@ defmodule Shapefile.Shp do
     5
 
   """
-  def record_type(<< type :: unit(8)-size(4)-little >>), do: type
+  def record_type(<<type::unit(8)-size(4)-little>>), do: type
 
   @doc """
   Extracts the record header from a given binary. The header is represented
@@ -346,12 +346,12 @@ defmodule Shapefile.Shp do
     }
 
   """
-  def record_header(<< header :: size(8)-binary >>) do
-    << number :: size(4)-binary, len :: size(4)-binary >> = header
+  def record_header(<<header::size(8)-binary>>) do
+    <<number::size(4)-binary, len::size(4)-binary>> = header
 
     %{
-        number: record_number(number),
-        length: record_length(len)
+      number: record_number(number),
+      length: record_length(len)
     }
   end
 
@@ -372,7 +372,7 @@ defmodule Shapefile.Shp do
 
   """
   def parse_record(number, record) do
-    << type :: size(4)-binary, contents :: binary >> = record
+    <<type::size(4)-binary, contents::binary>> = record
 
     %{
       number: number,
@@ -384,30 +384,30 @@ defmodule Shapefile.Shp do
   @doc """
   A point consists of a pair of double-precision coordinates in the order X,Y.
   """
-  def parse_shape(:point, << bytes :: size(16)-binary >>) do
-    << 
-      x :: unit(8)-size(8)-little-float,
-      y :: unit(8)-size(8)-little-float
+  def parse_shape(:point, <<bytes::size(16)-binary>>) do
+    <<
+      x::unit(8)-size(8)-little-float,
+      y::unit(8)-size(8)-little-float
     >> = bytes
 
     %{
       x: x,
       y: y
-    }    
+    }
   end
 
   def parse_points(points) do
-    << point :: size(16)-binary, points :: binary >> = points
-    [ parse_shape(:point, point) | parse_points(points) ]
+    <<point::size(16)-binary, points::binary>> = points
+    [parse_shape(:point, point) | parse_points(points)]
   end
 
   @doc """
   """
   def parse_shape(:multipoint, bytes) do
-    << 
-      box :: size(32)-binary, 
-      num_points :: size(8)-unit(4)-little,
-      points :: binary
+    <<
+      box::size(32)-binary,
+      num_points::size(8)-unit(4)-little,
+      points::binary
     >> = bytes
 
     %{
@@ -420,7 +420,6 @@ defmodule Shapefile.Shp do
   @doc """
   """
   def parse_shape(:polygon, bytes) do
-
   end
 
   @doc """
@@ -442,11 +441,12 @@ defmodule Shapefile.Shp do
 
   """
   def parse_records(<<>>), do: []
+
   def parse_records(bytes) do
-      << head :: size(8)-binary, bytes :: binary >> = bytes
-      %{number: number, length: len} = record_header(head)
-      << record :: unit(16)-size(len)-binary, tail :: binary >> = bytes
-      [ parse_record(number, record) | parse_records(tail) ]
+    <<head::size(8)-binary, bytes::binary>> = bytes
+    %{number: number, length: len} = record_header(head)
+    <<record::unit(16)-size(len)-binary, tail::binary>> = bytes
+    [parse_record(number, record) | parse_records(tail)]
   end
 
   @doc """
@@ -469,7 +469,7 @@ defmodule Shapefile.Shp do
 
   """
   def parse(bytes) do
-    << head :: unit(8)-size(100)-binary, body :: binary >> = bytes
+    <<head::unit(8)-size(100)-binary, body::binary>> = bytes
 
     %{
       header: header(head),

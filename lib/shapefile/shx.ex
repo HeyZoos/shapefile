@@ -16,7 +16,7 @@ defmodule Shapefile.Shx do
 
   """
   def offset(bytes) do
-    << val :: unit(8)-size(4)-big, _ :: binary >> = bytes
+    <<val::unit(8)-size(4)-big, _::binary>> = bytes
     val
   end
 
@@ -26,7 +26,7 @@ defmodule Shapefile.Shx do
   2-byte pairs for length that record.
   """
   def content_length(bytes) do
-    << _ :: unit(8)-size(4), len :: unit(8)-size(4)-big >> = bytes
+    <<_::unit(8)-size(4), len::unit(8)-size(4)-big>> = bytes
     len
   end
 
@@ -52,9 +52,10 @@ defmodule Shapefile.Shx do
 
   """
   def parse_records(<<>>), do: []
+
   def parse_records(bytes) do
-    << record :: unit(8)-size(8)-binary, tail :: binary >> = bytes
-    [ parse_record(record) | parse_records(tail) ]
+    <<record::unit(8)-size(8)-binary, tail::binary>> = bytes
+    [parse_record(record) | parse_records(tail)]
   end
 
   @doc """
@@ -74,7 +75,7 @@ defmodule Shapefile.Shx do
 
   """
   def parse(bytes) do
-    << head :: unit(8)-size(100)-binary, tail :: binary >> = bytes
+    <<head::unit(8)-size(100)-binary, tail::binary>> = bytes
 
     %{
       header: Shapefile.Shp.header(head),
