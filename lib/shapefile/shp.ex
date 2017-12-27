@@ -449,6 +449,26 @@ defmodule Shapefile.Shp do
   end
 
   @doc """
+  A PolyLine is an ordered set of vertices that consists of one or more parts.  
+  A part is a connected sequence of two or more points. Parts may or may not be 
+  connected to one another. Parts may or may not intersect one another.
+
+  Because this specification does not forbid consecutive points with identical 
+  coordinates, shapefile readers must handle such cases. On the other hand, the 
+  degenerate, zero length parts that might result are not allowed.
+
+  ## Examples
+
+    iex> shp = File.read!("test/fixtures/polyline.shp")
+    iex> polyline = Shapefile.Shp.parse_shape(:polyline, shp)
+    %{}
+
+  """
+  def parse_shape(:polyline, bytes) do
+    parse_shape(:polygon, bytes)
+  end
+
+  @doc """
   """
   def parse_shape(:polygon, shape) do
     <<
