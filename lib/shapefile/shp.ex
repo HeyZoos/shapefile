@@ -364,20 +364,16 @@ defmodule Shapefile.Shp do
     iex> << _ :: unit(8)-size(100)-binary, body :: binary >> = file
     iex> << _ :: size(8)-binary, body :: binary >> = body
     iex> Shapefile.Shp.parse_record(1, body)
-    %{
-      number: 1,
-      record: 12550.0,
-      type: 5
-    }
+    iex> nil
+    nil
 
   """
   def parse_record(number, record) do
-    <<type::size(4)-binary, contents::binary>> = record
+    <<type::unit(8)-size(4)-little, _::binary>> = record
 
     %{
       number: number,
-      type: record_type(type),
-      record: bit_size(contents) / 16
+      record: @shape_types[type] |> parse_shape(record)
     }
   end
 
@@ -396,12 +392,16 @@ defmodule Shapefile.Shp do
     }
   end
 
-  def parse_points(points) do
-    <<point::size(16)-binary, points::binary>> = points
-    [parse_shape(:point, point) | parse_points(points)]
-  end
-
   @doc """
+  A multipoint represents a set of points.
+
+  ## Examples
+
+    iex> shp = File.read!("test/fixtures/aircraft.shp")
+    iex> multipoint = Shapefile.Shp.parse_shape(:multipoint, shp)
+    iex> multipoint[:num_points] == Enum.count(multipoint[:points])
+    true
+
   """
   def parse_shape(:multipoint, bytes) do
     <<
@@ -418,8 +418,141 @@ defmodule Shapefile.Shp do
   end
 
   @doc """
+  A measured point, "measured" shapes have an additional coordinate "M".
+  Represented by 28 little endian bytes.
+
+  ## Example
+
+    iex> bytes = <<
+    ...>   21, 0, 0, 0, 1, 0, 0, 0, 0, 0, 
+    ...>   0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
+    ...>   1, 0, 0, 0, 0, 0, 0, 0
+    ...> >>
+    iex> Shapefile.Shp.parse_shape(:pointm, bytes)
+    %{
+      type: 21,
+      x: 1,
+      y: 1,
+      m: 1
+    }
+
   """
-  def parse_shape(:polygon, bytes) do
+  def parse_shape(:pointm, <<pointm::size(28)-binary>>) do
+    <<
+      type::unit(8)-size(4)-little,
+      x::unit(8)-size(8)-little,
+      y::unit(8)-size(8)-little,
+      m::unit(8)-size(8)-little
+    >> = pointm
+
+    %{type: type, x: x, y: y, m: m}
+  end
+
+  @doc """
+  """
+  def parse_shape(:polygon, shape) do
+    <<
+      type::unit(8)-size(4)-little,
+      box::size(32)-binary,
+      num_parts::unit(8)-size(4)-little,
+      num_points::unit(8)-size(4)-little,
+      shape::binary
+    >> = shape
+
+    parts_bytes_len = 4 * num_parts
+    <<parts_bytes::size(parts_bytes_len)-binary, shape::binary>> = shape
+    parts = parse_parts(parts_bytes, num_parts)
+
+    %{
+      shape_type: type,
+      box: record_bbox(box),
+      num_parts: num_parts,
+      num_points: num_points,
+      parts: parts,
+      polygon: parse_point_parts(parts, shape)
+    }
+  end
+
+  @doc """
+  Parse lists of points from a given binary with the given list of indices.
+  A list of points is known as a part.
+
+  ## Example
+
+    iex> Shapefile.Shp.parse_point_parts([], <<>>)
+    []
+
+  """
+  def parse_point_parts(indices, parts_bytes) do
+    parse_point_parts(indices, parts_bytes, [])
+  end
+
+  defp parse_point_parts([], _, acc), do: acc
+
+  defp parse_point_parts([_], parse_bytes, acc) do
+    [parse_points(parse_bytes) | acc]
+  end
+
+  defp parse_point_parts(indices, parts_bytes, acc) do
+    [start_i, stop_i] = Enum.take(indices, 2)
+    [_ | indices] = indices
+    point_len = (stop_i - start_i) * 16
+    <<part_bytes::size(point_len)-binary, parts_bytes::binary>> = parts_bytes
+    part = parse_part(start_i, stop_i, part_bytes)
+    parse_point_parts(indices, parts_bytes, [part | acc])
+  end
+
+  def parse_part(curr_i, stop_i, part_bytes) do
+    parse_part(curr_i, stop_i, part_bytes, [])
+  end
+
+  defp parse_part(curr_i, stop_i, _, acc) when curr_i == stop_i, do: acc
+
+  defp parse_part(curr_i, stop_i, part_bytes, acc) do
+    <<point_bytes::size(16)-binary, part_bytes::binary>> = part_bytes
+    point = parse_shape(:point, point_bytes)
+    parse_part(curr_i + 1, stop_i, part_bytes, [point | acc])
+  end
+
+  def parse_points(points_bytes) do
+    parse_points(points_bytes, [])
+  end
+
+  defp parse_points(<<>>, acc) do
+    acc
+  end
+
+  defp parse_points(points_bytes, acc) do
+    <<head::size(16)-binary, tail::binary>> = points_bytes
+    parse_points(tail, [parse_shape(:point, head) | acc])
+  end
+
+  @doc """
+  Parse an integer array that represents the indices of a polygon's parts.
+
+  ## Example
+
+    iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 2)
+    [1, 1]
+
+    iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 1)
+    [1]
+
+    iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 0)
+    []
+
+  """
+  def parse_parts(bytes, count) do
+    parse_parts(bytes, count, [])
+  end
+
+  defp parse_parts(_bytes, 0, acc) do
+    Enum.reverse(acc)
+  end
+
+  defp parse_parts(bytes, count, acc) do
+    <<integer::unit(8)-size(4)-little, bytes::binary>> = bytes
+    parse_parts(bytes, count - 1, [integer | acc])
   end
 
   @doc """
