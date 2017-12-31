@@ -19,6 +19,11 @@ defmodule Shapefile.Shp do
     31 => :multipatch
   }
 
+  @integer_byte_size 4
+  @double_byte_size 8
+
+  @point_byte_size 20
+
   @doc """
   Extracts the file code from the given binary. The file code is represented
   by the first 4 big endian bytes.
@@ -305,11 +310,11 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-    iex> file = File.read!("test/fixtures/aircraft.shp") 
-    iex> << _ :: unit(8)-size(100)-binary, content :: binary >> = file
-    iex> << _ :: size(4)-binary, len :: size(4)-binary, _ :: binary >> = content
-    iex> Shapefile.Shp.record_length(len)
-    12552
+      iex> file = File.read!("test/fixtures/aircraft.shp") 
+      iex> << _ :: unit(8)-size(100)-binary, content :: binary >> = file
+      iex> << _ :: size(4)-binary, len :: size(4)-binary, _ :: binary >> = content
+      iex> Shapefile.Shp.record_length(len)
+      12552
 
   """
   def record_length(<<len::unit(8)-size(4)-big>>), do: len
@@ -378,17 +383,66 @@ defmodule Shapefile.Shp do
   end
 
   @doc """
-  A point consists of a pair of double-precision coordinates in the order X,Y.
   """
-  def parse_shape(:point, <<bytes::size(16)-binary>>) do
+  def parse_shape(type, bytes) do
+    case type do
+      :point -> parse_point(bytes)
+      :polyline -> parse_polyline(bytes)
+      :polygon -> parse_polygon(bytes)
+      :multipoint -> parse_multipoint(bytes)
+      _ -> raise(ArgumentError, message: "Invalid type: #{type}")
+    end
+  end
+
+  @doc """
+  A point consists of a pair of double-precision coordinates in the order X,Y.
+
+  ## Examples
+
+      iex> Shapefile.Shp.parse_point(<<
+      ...>   1, 0, 0, 0,
+      ...>   0, 0, 0, 0, 0, 0, 0, 0,
+      ...>   0, 0, 0, 0, 0, 0, 0, 0
+      ...> >>)
+      %{type: 1, x: 0.0, y: 0.0}
+
+  """
+  def parse_point(<<bytes::size(20)-binary>>) do
     <<
+      type::unit(8)-size(4)-little,
       x::unit(8)-size(8)-little-float,
       y::unit(8)-size(8)-little-float
     >> = bytes
 
     %{
+      type: type,
       x: x,
       y: y
+    }
+  end
+
+  @doc """
+  """
+  def parse_polygon(bytes) do
+    <<
+      type::unit(8)-size(4)-little,
+      box::size(32)-binary,
+      num_parts::unit(8)-size(4)-little,
+      num_points::unit(8)-size(4)-little,
+      bytes::binary
+    >> = bytes
+
+    parts_bytes_len = @integer_byte_size * num_parts
+    <<parts_bytes::size(parts_bytes_len)-binary, bytes::binary>> = bytes
+    parts = parse_parts(parts_bytes, num_parts)
+
+    %{
+      shape_type: type,
+      box: record_bbox(box),
+      num_parts: num_parts,
+      num_points: num_points,
+      parts: parts,
+      polygon: parse_point_parts(parts, bytes)
     }
   end
 
@@ -397,20 +451,21 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-    iex> shp = File.read!("test/fixtures/aircraft.shp")
-    iex> multipoint = Shapefile.Shp.parse_shape(:multipoint, shp)
-    iex> multipoint[:num_points] == Enum.count(multipoint[:points])
-    true
-
   """
-  def parse_shape(:multipoint, bytes) do
+  def parse_multipoint(bytes) do
     <<
+      type::unit(8)-size(4)-little,
       box::size(32)-binary,
-      num_points::size(8)-unit(4)-little,
+      num_points::unit(8)-size(4)-little,
       points::binary
     >> = bytes
 
+    IO.puts("parse_multipoint : type = #{type}")
+    IO.puts("parse_multipoint : record_bbox(box) = #{record_bbox(box)}")
+    IO.puts("parse_multipoint : num_points = #{num_points}")
+
     %{
+      type: type,
       box: record_bbox(box),
       num_points: num_points,
       points: parse_points(points)
@@ -428,7 +483,7 @@ defmodule Shapefile.Shp do
     ...>   0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
     ...>   1, 0, 0, 0, 0, 0, 0, 0
     ...> >>
-    iex> Shapefile.Shp.parse_shape(:pointm, bytes)
+    iex> Shapefile.Shp.parse_pointm(bytes)
     %{
       type: 21,
       x: 1,
@@ -437,13 +492,13 @@ defmodule Shapefile.Shp do
     }
 
   """
-  def parse_shape(:pointm, <<pointm::size(28)-binary>>) do
+  def parse_pointm(<<bytes::size(28)-binary>>) do
     <<
       type::unit(8)-size(4)-little,
       x::unit(8)-size(8)-little,
       y::unit(8)-size(8)-little,
       m::unit(8)-size(8)-little
-    >> = pointm
+    >> = bytes
 
     %{type: type, x: x, y: y, m: m}
   end
@@ -459,38 +514,37 @@ defmodule Shapefile.Shp do
 
   ## Examples
 
-    iex> shp = File.read!("test/fixtures/polyline.shp")
-    iex> polyline = Shapefile.Shp.parse_shape(:polyline, shp)
-    %{}
-
   """
-  def parse_shape(:polyline, bytes) do
-    parse_shape(:polygon, bytes)
+  def parse_polyline(bytes) do
+    parse_polygon(bytes)
   end
 
   @doc """
+  A PointZ consists of a triplet of double-precision coordinates in the 
+  order X, Y, Z plus a measure. The total size of a PointZ is 36 bytes.
+
+  ## Examples
+
+      iex> Shapefile.Shp.parse_pointz <<
+      ...>   11, 0, 0, 0,
+      ...>   0, 0, 0, 0, 0, 0, 0, 0,
+      ...>   0, 0, 0, 0, 0, 0, 0, 0,
+      ...>   0, 0, 0, 0, 0, 0, 0, 0,
+      ...>   0, 0, 0, 0, 0, 0, 0, 0,
+      ...> >>
+      %{type: 11, x: 0.0, y: 0.0, z: 0.0, m: 0.0}
+
   """
-  def parse_shape(:polygon, shape) do
+  def parse_pointz(<<bytes::size(36)-binary>>) do
     <<
-      type::unit(8)-size(4)-little,
-      box::size(32)-binary,
-      num_parts::unit(8)-size(4)-little,
-      num_points::unit(8)-size(4)-little,
-      shape::binary
-    >> = shape
+      type::unit(8)-size(@integer_byte_size)-little,
+      x::unit(8)-size(@double_byte_size)-little-float,
+      y::unit(8)-size(@double_byte_size)-little-float,
+      z::unit(8)-size(@double_byte_size)-little-float,
+      m::unit(8)-size(@double_byte_size)-little-float
+    >> = bytes
 
-    parts_bytes_len = 4 * num_parts
-    <<parts_bytes::size(parts_bytes_len)-binary, shape::binary>> = shape
-    parts = parse_parts(parts_bytes, num_parts)
-
-    %{
-      shape_type: type,
-      box: record_bbox(box),
-      num_parts: num_parts,
-      num_points: num_points,
-      parts: parts,
-      polygon: parse_point_parts(parts, shape)
-    }
+    %{type: type, x: x, y: y, z: z, m: m}
   end
 
   @doc """
@@ -516,12 +570,14 @@ defmodule Shapefile.Shp do
   defp parse_point_parts(indices, parts_bytes, acc) do
     [start_i, stop_i] = Enum.take(indices, 2)
     [_ | indices] = indices
-    point_len = (stop_i - start_i) * 16
+    point_len = (stop_i - start_i) * @point_byte_size
     <<part_bytes::size(point_len)-binary, parts_bytes::binary>> = parts_bytes
     part = parse_part(start_i, stop_i, part_bytes)
     parse_point_parts(indices, parts_bytes, [part | acc])
   end
 
+  @doc """
+  """
   def parse_part(curr_i, stop_i, part_bytes) do
     parse_part(curr_i, stop_i, part_bytes, [])
   end
@@ -529,11 +585,17 @@ defmodule Shapefile.Shp do
   defp parse_part(curr_i, stop_i, _, acc) when curr_i == stop_i, do: acc
 
   defp parse_part(curr_i, stop_i, part_bytes, acc) do
-    <<point_bytes::size(16)-binary, part_bytes::binary>> = part_bytes
-    point = parse_shape(:point, point_bytes)
+    <<point_bytes::size(20)-binary, part_bytes::binary>> = part_bytes
+    point = parse_point(point_bytes)
     parse_part(curr_i + 1, stop_i, part_bytes, [point | acc])
   end
 
+  @doc """
+  Extract points into a list of points from the given binary.
+
+  ## Examples
+
+  """
   def parse_points(points_bytes) do
     parse_points(points_bytes, [])
   end
@@ -543,8 +605,8 @@ defmodule Shapefile.Shp do
   end
 
   defp parse_points(points_bytes, acc) do
-    <<head::size(16)-binary, tail::binary>> = points_bytes
-    parse_points(tail, [parse_shape(:point, head) | acc])
+    <<head::size(20)-binary, tail::binary>> = points_bytes
+    parse_points(tail, [parse_point(head) | acc])
   end
 
   @doc """
@@ -552,14 +614,14 @@ defmodule Shapefile.Shp do
 
   ## Example
 
-    iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 2)
-    [1, 1]
+      iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 2)
+      [1, 1]
 
-    iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 1)
-    [1]
+      iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 1)
+      [1]
 
-    iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 0)
-    []
+      iex> Shapefile.Shp.parse_parts(<<1,0,0,0,1,0,0,0>>, 0)
+      []
 
   """
   def parse_parts(bytes, count) do
@@ -576,28 +638,28 @@ defmodule Shapefile.Shp do
   end
 
   @doc """
-  Given a the file content of a .shp file, extract the record into a
+  Given a the file content of a .shp file, extract the records into a
   list of maps.
 
   ## Examples
 
-    # iex> shp = File.read!("test/fixtures/watersheds.shp")
-    # iex> << _ :: size(100)-binary, body >> = shp
-    # iex> Shapefile.Shp.parse(body)
-    [%{number: 1, record: 7222.0, type: 5},
-      %{number: 2, record: 3230.0, type: 5}, 
-      %{number: 3, record: 6392.0, type: 5},
-      %{number: 4, record: 3006.0, type: 5},
-      %{number: 5, record: 10878.0, type: 5},
-      %{number: 6, record: 2080.0, type: 5},
-      %{number: 7, record: 19144.0, type: 5}]
+      iex> shp = File.read!("test/fixtures/watersheds.shp")
+      iex> << _ :: size(100)-binary, body::binary>> = shp
+      iex> Shapefile.Shp.parse_records(body)
+      [%{number: 1, record: 7222.0, type: 5},
+        %{number: 2, record: 3230.0, type: 5}, 
+        %{number: 3, record: 6392.0, type: 5},
+        %{number: 4, record: 3006.0, type: 5},
+        %{number: 5, record: 10878.0, type: 5},
+        %{number: 6, record: 2080.0, type: 5},
+        %{number: 7, record: 19144.0, type: 5}]
 
   """
   def parse_records(<<>>), do: []
 
   def parse_records(bytes) do
     <<head::size(8)-binary, bytes::binary>> = bytes
-    %{number: number, length: len} = record_header(head)
+    IO.inspect(%{number: number, length: len} = record_header(head))
     <<record::unit(16)-size(len)-binary, tail::binary>> = bytes
     [parse_record(number, record) | parse_records(tail)]
   end

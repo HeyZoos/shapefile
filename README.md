@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/HeyZoos/shapefile.svg?branch=master)](https://travis-ci.org/HeyZoos/shapefile?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/HeyZoos/shapefile/badge.svg?branch=master)](https://coveralls.io/github/HeyZoos/shapefile?branch=master)
+[![Elixir Version](https://img.shields.io/badge/elixir-1.5.3-blue.svg)](https://hexdocs.pm/elixir/1.5.3/Kernel.html)
 
 **TODO: Add description**
 
