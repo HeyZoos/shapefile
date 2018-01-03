@@ -28,7 +28,8 @@ defmodule Shapefile.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:excoveralls, "~> 0.7.5", only: :test}
+      {:excoveralls, "~> 0.7.5", only: :test},
+      {:poison, "~> 3.1.0", only: [:dev, :test]}
     ]
   end
 end

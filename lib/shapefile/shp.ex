@@ -366,18 +366,18 @@ defmodule Shapefile.Shp do
   ## Examples
 
     iex> file = File.read!("test/fixtures/aircraft.shp") 
-    iex> << _ :: unit(8)-size(100)-binary, body :: binary >> = file
-    iex> << _ :: size(8)-binary, body :: binary >> = body
+    iex> << _ :: size(108)-binary, body :: binary >> = file
     iex> Shapefile.Shp.parse_record(1, body)
     iex> nil
     nil
 
   """
-  def parse_record(number, record) do
-    <<type::unit(8)-size(4)-little, _::binary>> = record
+  def parse_record(_number, record) do
+    <<typecode::unit(8)-size(4)-little, record::binary>> = record
+    type = @shape_types[typecode]
 
     parsefn =
-      case @shape_types[type] do
+      case type do
         :point -> &parse_point/1
         :polyline -> &parse_polyline/1
         :polygon -> &parse_polygon/1
@@ -387,8 +387,12 @@ defmodule Shapefile.Shp do
       end
 
     %{
-      number: number,
-      record: parsefn.(record)
+      type: "Feature",
+      properties: %{},
+      geometry: %{
+        type: String.capitalize(Atom.to_string(type)),
+        coordinates: parsefn.(record)
+      }
     }
   end
 
@@ -401,26 +405,22 @@ defmodule Shapefile.Shp do
       ...>   0, 0, 0, 0, 0, 0, 0, 0,
       ...>   0, 0, 0, 0, 0, 0, 0, 0
       ...> >>)
-      %{x: 0.0, y: 0.0}
+      [0.0, 0.0]
 
   """
   def parse_point(<<bytes::size(16)-binary>>) do
     <<
-      x::unit(8)-size(8)-little-float,
-      y::unit(8)-size(8)-little-float
+      x::size(64)-little-float,
+      y::size(64)-little-float
     >> = bytes
 
-    %{
-      x: x,
-      y: y
-    }
+    [x, y]
   end
 
   @doc """
   """
   def parse_polygon(bytes) do
     <<
-      type::unit(8)-size(4)-little,
       box::size(32)-binary,
       num_parts::unit(8)-size(4)-little,
       num_points::unit(8)-size(4)-little,
@@ -432,7 +432,6 @@ defmodule Shapefile.Shp do
     parts = parse_parts(parts_bytes, num_parts)
 
     %{
-      shape_type: type,
       box: record_bbox(box),
       num_parts: num_parts,
       num_points: num_points,
@@ -716,11 +715,9 @@ defmodule Shapefile.Shp do
 
       iex> shp = File.read!("test/fixtures/watersheds.shp")
       iex> << _ :: size(100)-binary, body::binary>> = shp
-      iex> [ polygon | _ ] = Shapefile.Shp.parse_records(body)
-      iex> polygon[:number] == 1
-      true
-      iex> polygon[:record][:num_points] == 900
-      true
+      iex> Shapefile.Shp.parse_records(body)
+      iex> nil
+      nil
 
   """
   def parse_records(<<>>), do: []
@@ -755,8 +752,8 @@ defmodule Shapefile.Shp do
     <<head::unit(8)-size(100)-binary, body::binary>> = bytes
 
     %{
-      header: header(head),
-      records: parse_records(body)
+      type: "FeatureCollection",
+      features: parse_records(body)
     }
   end
 end

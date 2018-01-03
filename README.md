@@ -11,6 +11,13 @@
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 by adding `shapefile` to your list of dependencies in `mix.exs`:
 
+## Examples
+
+```elixir
+shape = Shapefile.read!("path/to/shapefile.shp")
+json = Poison.encode!(shape)
+```
+
 ```elixir
 def deps do
   [
